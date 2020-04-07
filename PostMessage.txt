@@ -1,0 +1,61 @@
+// REST handler
+postMessagesHandler: function(req, res) {
+    postMessagesList(req.body.stepId, req.body.messages, res);
+}
+
+postMessagesList: async function (stepId, messages, res) {
+    let cache = {};
+    if (messages) {
+        persistence()
+            .findall(globals.modelNames.CommunicationMessage, {step_id: globals.generateUuidFromString(stepId)})
+            //Find all current messages that have same step_id
+            .then(oldMessages => {
+                cache.oldMessages = JSON.parse(JSON.stringify(oldMessages));
+                return persistence().del(globals.modelNames.CommunicationMessage, {findBy: {step_id: globals.generateUuidFromString(stepId)}})
+            })
+            //Delete all of them
+            .then(result => {
+                let promises = [];
+                messages.forEach(message => {
+                    promises.push(persistence().save(globals.modelNames.CommunicationMessage, message))
+                });
+                return promises;
+            })
+            //Save new messages
+            .then(messages => {
+                cache.newMessages = JSON.parse(JSON.stringify(messages));
+                let messageMap = new Map();
+                cache.newMessages.forEach(message => messageMap.put(message.id, message));
+                let promises = [];
+                cache.oldMessages.forEach(message => {
+                    //If a message is gone
+                    if (!messageMap.get(message.id)) {
+                        //Delete children actions
+                        promises.push(persistence().del(globals.modelNames.CommunicationAction, {findBy: {message_id: message.id}}));
+                    }
+                });
+                return promises;
+            })
+            //Cascade delete actions (for deleted messages)
+            .then(results => {
+                if (cache.newMessages) {
+                    res.send(cache.newMessages);
+                } else {
+                    res.status(httpStatus.NO_CONTENT).send("No content");
+                }
+            })
+            // .then(results => {
+            //     if (cache.newMessages) {
+            //         res.send(cache.newMessages);
+            //     } else {
+            //         res.send("No content");
+            //     }
+            // })
+            .catch(function (err) {
+                console.error(err);
+                res.status(httpStatus.INTERNAL_SERVER_ERROR).send(err.message);
+            });
+    } else {
+        res.status(httpStatus.NO_CONTENT).send("No content");
+    }
+}
