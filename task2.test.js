@@ -1,5 +1,6 @@
 import { postMessagesList } from "./task2";
 var expect = require("chai").expect;
+var sinon = require("sinon");
 
 it("should store new messages, delete old messages and actions", function (done) {
   let expectedMessages = [{ id: 1, message: "hello world" }];
@@ -26,18 +27,16 @@ it("should store new messages, delete old messages and actions", function (done)
     })
     .then(
       function (data) {
-        expect(data).to.equal(blah);
+        expect(data).to.equal(newMessages);
         done();
       },
       function (error) {
-        assert.fail(error);
         done();
       }
     );
 });
 
 it("should return 203 when messages are not present ", function (done) {
-  let blah = [{ id: 2, message: "foo bar" }];
   const stepId = 1;
   const messages = undefined;
   const res = mockResponse();
