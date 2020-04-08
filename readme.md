@@ -7,10 +7,9 @@ Task 1 is done using JavaScript's built in function filter
 Task 2:
 
 - added module.exports to remove syntactical errors
-- removed the async keyword as we are using then promises. Could have converted them to await but there is a dependency on each function
+- removed the async keyword as we are using then promises.
 - update put from the messagesMap to set
 - added httpStatus code for the successful response
--
 
 **Pending**:
 
